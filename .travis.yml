@@ -3,20 +3,31 @@ services:
   - docker
 
 before_install:
-  - docker build -t kpadania/docker-react -f Dockerfile.dev .
+  - docker build -t kpadania/react-test -f ./client/Dockerfile.dev ./client
 
 script:
-  - docker run -d kpadania/docker-react npm run test
+  - docker run -d kpadania/react-test npm run test
 
-deploy: 
-  provider: elasticbeanstalk
-  region: "us-east-2"
-  app: "docker-react"
-  env: "DockerReact-env"
-  bucket_name: "elasticbeanstalk-us-east-2-830990676668"
-  bucket_path: "docker-react"
-  on:
-    branch: master
-  access_key_id: $AWS_ACCESS_KEY
-  secret_access_key:
-    secure: "$AWS_SECRET_KEY"
+after_success:
+  - docker build -t kpadania/multi-client -f ./client
+  - docker build -t kpadania/multi-nginx -f ./nginx
+  - docker build -t kpadania/multi-server -f ./server
+  - docker build -t kpadania/multi-worker -f ./worker
+  - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+  - docker push kpadania/multi-client
+  - docker push kpadania/multi-nginx
+  - docker push kpadania/multi-server
+  - docker push kpadania/multi-worker 
+
+#deploy: 
+  #provider: elasticbeanstalk
+  #region: "us-east-2"
+  #app: "docker-react"
+  #env: "DockerReact-env"
+  #bucket_name: "elasticbeanstalk-us-east-2-830990676668"
+  #bucket_path: "docker-react"
+  #on:
+    #branch: master
+  #access_key_id: $AWS_ACCESS_KEY
+  #secret_access_key:
+    #secure: "$AWS_SECRET_KEY"
